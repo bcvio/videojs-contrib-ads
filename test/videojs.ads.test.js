@@ -969,4 +969,49 @@ QUnit.test('player events during content playback are not prefixed', function(as
   assert.strictEqual(prefixed.getCall(0).args[0].type, 'contentended', 'prefixed the ended event');
 });
 
+QUnit.test('startLinearAdMode should only trigger adstart from correct states', function(assert) {
+
+  var adstart = sinon.spy();
+  this.player.on('adstart', adstart);
+
+  this.player.ads.state = 'preroll?';
+  this.player.ads.startLinearAdMode();
+  assert.strictEqual(adstart.callCount, 1, 'preroll? state');
+
+  this.player.ads.state = 'content-playback';
+  this.player.ads.startLinearAdMode();
+  assert.strictEqual(adstart.callCount, 2, 'content-playback state');
+
+  this.player.ads.state = 'postroll?';
+  this.player.ads.startLinearAdMode();
+  assert.strictEqual(adstart.callCount, 3, 'postroll? state');
+
+  this.player.ads.state = 'content-set';
+  this.player.ads.startLinearAdMode();
+  this.player.ads.state = 'ads-ready?';
+  this.player.ads.startLinearAdMode();
+  this.player.ads.state = 'ads-ready';
+  this.player.ads.startLinearAdMode();
+  this.player.ads.state = 'ad-playback';
+  this.player.ads.startLinearAdMode();
+  assert.strictEqual(adstart.callCount, 3, 'other states');
+});
+
+QUnit.test('ad impl can notify contrib-ads there is no preroll', function(assert) {
+
+  this.player.ads.state = 'preroll?';
+  this.player.trigger('nopreroll');
+  assert.strictEqual(this.player.ads.state, 'content-playback', 'no longer in preroll?');
+
+});
+
+// QUnit.test('ad impl can notify contrib-ads there is no postroll', function(assert) {
+
+//   this.player.trigger('nopostroll');
+//   this.player.ads.state = 'content-playback';
+//   this.player.trigger('contentended');
+//   assert.strictEqual(this.player.ads.state, 'content-resuming', 'no longer in postroll?');
+
+// });
+
 }(window, window.QUnit));
